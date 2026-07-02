@@ -46,7 +46,9 @@ class ChatConsumer(WebsocketConsumer):
 
     def receive(self, text_data=None):
         data = json.loads(text_data)
-        room = ChatRoom.objects.get(name="SBK Developer")
+        room, created = ChatRoom.objects.get_or_create(
+            name="SBK Developer"
+        )
         
         # ডাটাবেজে মেসেজ সেভ করা
         msg = Messages.objects.create(
