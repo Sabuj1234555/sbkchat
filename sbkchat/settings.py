@@ -61,7 +61,7 @@ REST_FRAMEWORK = {
 
     # ২. অথেন্টিকেশন স্কিম (Authentication)
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        #'rest_framework.authentication.BearerAuthentication', # JWT বা ওয়ান-টাইম টোকেন
+        #'rest_framework.authentication.BearerAuthentication', # JWT বা ওয়ান-টাইম টোকেন
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication'
         # ব্রাউজার সেশনের জন্য
@@ -83,8 +83,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',   # না চেনা ইউজারের জন্য দিনে ১০০ বার রিকোয়েস্ট লিমিট
-        'user': '1000/day'   # রেজিস্টার্ড ইউজারের জন্য দিনে ১০০০ বার রিকোয়েস্ট লিমিট
+        'anon': '100/day',   # না চেনা ইউজারের জন্য দিনে ১০০ বার রিকোয়েস্ট লিমিট
+        'user': '1000/day'   # রেজিস্টার্ড ইউজারের জন্য দিনে ১০০০ বার রিকোয়েস্ট লিমিট
     }
 }
 
@@ -172,8 +172,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
+STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
