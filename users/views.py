@@ -81,3 +81,10 @@ class AuthView(APIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+
+class CheckUserView(APIView):
+    def get(self,request):
+        if request.user.is_authenticated:
+            return Response({"user_valid":True})
+        return Response({"user_valid":False})
