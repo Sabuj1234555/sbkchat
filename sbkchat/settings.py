@@ -28,7 +28,11 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "sbkchat.onrender.com",
 ]
-
+CSRF_TRUSTED_ORIGINS = [
+    "https://sbkchat.onrender.com",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+]
 
 # Application definition
 
