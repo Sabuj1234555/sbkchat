@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+import dj_database_url
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,7 +30,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "sbkchat.onrender.com",
+
     
+
+
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://sbkchat.onrender.com",
@@ -138,13 +144,25 @@ CHANNEL_LAYERS = {
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
 
+# [YOUR-PASSWORD] এর জায়গায় আপনার আসল সুপাবেস পাসওয়ার্ডটি বসিয়ে দিন
+DATABASE_URL = "postgresql://postgres.xyqcmdkrknofzxqtzeig:Programar@36936@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres"
+DIRECT_URL = "postgresql://postgres.xyqcmdkrknofzxqtzeig:Programar@36936@aws-1-ap-southeast-2.pooler.supabase.com:5432/postgres"
+
+
+
+# কমান্ডে migrate থাকলে DIRECT_URL ব্যবহার হবে, অন্যথায় মূল DATABASE_URL
+if 'migrate' in sys.argv or 'makemigrations' in sys.argv:
+    CURRENT_DB_URL = DIRECT_URL
+else:
+    CURRENT_DB_URL = DATABASE_URL
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=CURRENT_DB_URL,
+        conn_max_age=0 if CURRENT_DB_URL == DATABASE_URL else 600
+    )
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

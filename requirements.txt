@@ -8,3 +8,5 @@ gunicorn
 uvicorn
 django-cors-headers
 whitenoise
+psycopg2-binary
+dj-database-url

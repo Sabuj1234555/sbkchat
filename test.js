@@ -1,4 +1,4 @@
-let url = "http://127.0.0.1:8000/"
+let url = "https://sbkchat.onrender.com/"
 
 async function fetch_user() {
     try {
@@ -9,8 +9,8 @@ async function fetch_user() {
 
             },
             body: JSON.stringify({
-                username: "juyel",
-                password: "sobuj369"
+                username: "sobuj",
+                password: "sobuj@369"
             })
         })
         console.log(response.status)
@@ -21,7 +21,7 @@ async function fetch_user() {
         console.log(err)
     }
 }
-//fetch_user()
+// fetch_user()
 
 async function check(){
     try{
@@ -29,7 +29,7 @@ async function check(){
             method:"get",
             headers:{
                 "Content-Type":"application/json",
-                'Authorization':"Token 2097a0f8315bf0394d54cfca876f1f74b0bf211d"
+                'Authorization':"Token 33c799cf3991cd1aec76139760f048cebb79f43e"
             }
         })
         const data = await response.json();
