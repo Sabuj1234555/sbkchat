@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 class ChatRoom(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE,related_name="room_creator")
     name = models.CharField(max_length=100,unique=True)
-    members = models.ManyToManyField(User,related_name="room_joiner",null=True,blank=True)
+    members = models.ManyToManyField(User,related_name="room_joiner",blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self) -> str:
         return self.name

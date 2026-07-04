@@ -30,7 +30,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     "sbkchat.onrender.com",
-
+    "localhost",
+    "127.0.0.1"
     
 
 
