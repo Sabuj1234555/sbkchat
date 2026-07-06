@@ -1,18 +1,14 @@
 import json
 from urllib.parse import parse_qs
-
 from channels.generic.websocket import WebsocketConsumer
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async # sync_to_async যোগ করা হয়েছে
 from rest_framework.authtoken.models import Token
 from .models import ChatRoom, MessageDelivery, Messages
-
 
 class ChatConsumer(WebsocketConsumer):
 
     def connect(self):
         print("CONNECT START")
-        
-        # ডিফল্টভাবে room_group_name খালি রাখা হলো যেন ডিসকানেক্টে ক্র্যাশ না করে
         self.room_group_name = None 
 
         query = parse_qs(self.scope["query_string"].decode())
@@ -23,18 +19,23 @@ class ChatConsumer(WebsocketConsumer):
         print("ROOM ID:", room_id)
 
         try:
-            # ১. টোকেন দিয়ে ইউজার বের করা
-            token = Token.objects.get(key=token_key)
-            self.user = token.user
+            # ডাটাবেজ কুয়েরিগুলোকে নিরাপদভাবে রান করানোর জন্য অ্যাসিঙ্ক-টু-সিঙ্ক করা হলো
+            # কারণ সাধারণ ডিরেক্ট কুয়েরি অনেক সময় ASGI থ্রেড লক করে রিসেট এরর দেয়
+            @async_to_sync
+            async def get_records():
+                # টোকেন ও ইউজার বের করা
+                token = await sync_to_async(Token.objects.select_related('user').get)(key=token_key)
+                user = token.user
+                # রুম বের করা
+                room = await sync_to_async(ChatRoom.objects.get)(id=room_id)
+                return user, room
 
-            # ২. রুমটি ডাটাবেজে আছে কিনা নিশ্চিত করা
-            room = ChatRoom.objects.get(id=room_id)
+            # রেকর্ডগুলো নিয়ে আসা
+            self.user, room = get_records()
 
-            # ৩. নিরাপদ গ্রুপের নাম তৈরি (রুমের নামের বদলে আইডি ব্যবহার করা হলো)
-            # এটি 'chat_1' এর মতো নিরাপদ নাম তৈরি করবে, যেখানে কোনো স্পেস বা নিষিদ্ধ অক্ষর থাকবে না
             self.room_group_name = f"chat_{room_id}"
 
-            # ৪. গ্রুপে যুক্ত করা
+            # গ্রুপে যুক্ত করা
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name,
                 self.channel_name
@@ -43,12 +44,29 @@ class ChatConsumer(WebsocketConsumer):
             self.accept()
             print(f"Connected successfully: {self.user.username}")
             
-            # ৫. পেন্ডিং বা অফলাইন মেসেজ পাঠানো
-            pending = MessageDelivery.objects.filter(
-                user=self.user,
-                delivered=False,
-                message__room=room
-            )
+            if not room.members.filter(id=self.user.id).exists():
+                room.members.add(self.user)
+                room.save()
+                print(room.members.count())
+                
+            print(room.members.count())
+            
+                
+            
+            
+            # পেন্ডিং বা অফলাইন মেসেজ পাঠানো (নিরাপদ উপায়ে)
+            @async_to_sync
+            async def get_pending_messages():
+                pending_list = await sync_to_async(list)(
+                    MessageDelivery.objects.filter(
+                        user=self.user,
+                        delivered=False,
+                        message__room=room
+                    ).select_related('message__user')
+                )
+                return pending_list
+
+            pending = get_pending_messages()
 
             for item in pending:
                 self.send(text_data=json.dumps({
@@ -56,13 +74,22 @@ class ChatConsumer(WebsocketConsumer):
                     "username": item.message.user.username,
                     "message": item.message.content,
                 }))
-                item.delivered = True
-                item.save()
+                
+                # ডেলিভারি স্ট্যাটাস আপডেট
+                @async_to_sync
+                async def save_item(delivery_item):
+                    delivery_item.delivered = True
+                    await sync_to_async(delivery_item.save)()
+                
+                save_item(item)
 
         except Exception as e:
-            print("CONNECT ERROR:", e)
-            # কোনো সমস্যা হলে কানেকশন রিজেক্ট করা
+            # এররটি যেন জ্যাঙ্গো টার্মিনালে পুঙ্খানুপুঙ্খ দেখা যায়
+            import traceback
+            print("CONNECT ERROR:")
+            traceback.print_exc()
             self.close()
+
 
     def disconnect(self, close_code):
         print(f"Disconnected with code: {close_code}")
@@ -91,6 +118,7 @@ class ChatConsumer(WebsocketConsumer):
                 room=room,
                 content=message
             )
+            print(msg)
             
             # অন্য মেম্বারদের জন্য ডেলিভারি রেকর্ড তৈরি
             members = room.members.exclude(id=self.user.id)
